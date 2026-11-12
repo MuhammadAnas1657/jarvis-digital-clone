@@ -83,28 +83,25 @@ class ChatRequest(BaseModel):
     hf_token: Optional[str] = None
 
 
-app = FastAPI(title="JARVIS")
-
-
-@app.get("/", response_class=HTMLResponse)
 def index():
     with open(os.path.join(BASE_DIR, "static", "index.html"), "r", encoding="utf-8") as f:
-        return f.read()
+        return HTMLResponse(content=f.read())
 
 
-@app.post("/api/chat")
 def api_chat(req: ChatRequest):
     try:
         return JSONResponse(chat_logic(req.message, req.mode, max(1, min(req.top_k, 5)), req.history, req.hf_token))
-    except Exception as e:  # never crash the UI
+    except Exception as e:
         return JSONResponse({"reply": f"Something went wrong: {e}", "chunks": []}, status_code=200)
 
 
 # Minimal Gradio app mounted for Gradio-SDK compatibility
-with gr.Blocks(title="JARVIS (Gradio)") as demo:
-    gr.Markdown("Open the main interface at the site root `/`.")
+with gr.Blocks(title="JARVIS") as demo:
+    gr.HTML('<div style="text-align:center;padding:40px;font-family:sans-serif;"><h2>JARVIS is running.</h2><p><a href="/" style="color:#2563eb;font-weight:bold;">Click here to open the full JARVIS interface</a></p></div>')
 
-app = gr.mount_gradio_app(app, demo, path="/gradio")
+# Attach custom routes directly to demo.app
+demo.app.add_api_route("/", index, methods=["GET"])
+demo.app.add_api_route("/api/chat", api_chat, methods=["POST"])
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 7860)))
+    demo.launch(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", 7860)))
