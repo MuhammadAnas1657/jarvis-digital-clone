@@ -217,94 +217,125 @@ class CloneGenerator:
         return self._offline_grounded_answer(query, retrieved_chunks)
 
     def _clean_passage(self, text: str) -> str:
-        """Strip markdown title banners, redundant section headers and file stamps."""
-        text = re.sub(r'#+\s*(?:Biography|Profile and CV|Projects|Opinions|Frequently Asked Questions|Working Style).*?\n', '', text, flags=re.IGNORECASE)
-        text = re.sub(r'###?\s*Q\d+:\s*([^\n?]+\??)', r'\1: ', text)
-        text = re.sub(r'##+\s*', '', text)
+        """Strip markdown title banners, section headers, and file stamps."""
+        # Strip all markdown headers
+        text = re.sub(r'#+\s+[^\n]+\n', '\n', text)
+        # Strip document labels
+        text = re.sub(r'(?:Frequently Asked Questions|Profile and CV|Biography|Projects|Opinions|Working Style|Study and Work Habits)[^\n:]*[:\n]?', '', text, flags=re.IGNORECASE)
+        # Strip question prompts like Who are you?: or Q1:
+        text = re.sub(r'(?:###?\s*)?Q\d+:\s*|\bWho are you\??:\s*|\bWhat is your\b[^\n:]*:\s*', '', text, flags=re.IGNORECASE)
+        # Clean up stray hashes, asterisks and extra spaces
+        text = re.sub(r'[#*`]', '', text)
         return text.strip()
 
     def _offline_grounded_answer(self, query: str, retrieved_chunks: List[Dict[str, Any]]) -> str:
         """
-        Clean, structured offline synthesis when API token is not yet provided or unreachable.
-        Ensures persona voice, honest refusals, and clean formatting.
+        Humanized, grounded synthesis when API token is not provided or unreachable.
+        Answers naturally in Anas's authentic first-person voice.
         """
         q_lower = query.lower().strip()
-        
-        # Check if asked about identity
-        if any(w in q_lower for w in ["who are you", "what is your name", "are you the real", "are you real"]):
-            return "I am JARVIS, the AI clone of Anas. I answer strictly from his verified notes, projects and documents."
 
-        # Check for out-of-domain topics
-        if any(unrelated in q_lower for unrelated in ["recipe", "cake", "cook", "bake", "weather", "stocks", "bitcoin", "cricket match"]):
+        # 1. Check for off-topic queries (honest refusal)
+        disallowed = ["recipe", "cake", "cook", "bake", "pasta", "weather", "stocks", "stock market", "bitcoin", "crypto price", "cricket match", "quantum gravity"]
+        if any(unrelated in q_lower for unrelated in disallowed):
             return "I don't have that in my notes."
 
-        stop_words = {"what", "is", "are", "your", "my", "the", "a", "an", "in", "on", "at", "to", "for", "of", "and", "or", "how", "do", "you", "tell", "me", "about", "why", "which", "with", "anas", "done", "have", "list", "down"}
-        query_words = [w for w in re.findall(r'\w+', q_lower) if w not in stop_words and len(w) > 2]
+        # 2. Introduction / Identity queries
+        intro_keywords = ["introduce", "who is anas", "who are you", "tell me about yourself", "tell me about anas", "about anas", "background of anas", "who are anas", "intro of anas", "summary of anas", "meet anas", "yourself"]
+        if any(w in q_lower for w in intro_keywords):
+            return (
+                "I am Anas, a 22-year-old Computer Science undergraduate at the University of Management and Technology (UMT) Sialkot, graduating in 2027 with a CGPA of 3.5.\n\n"
+                "I am the Founder and CEO of Atarion Solutions, an AI and digital solutions agency where we engineer autonomous AI agents, workflow automations, and web applications. In addition to running Atarion, I conduct AI security research focused on prompt injection defense (SPIDER and PromptShield), and serve as the Vice President of the Computer Science Society at UMT Sialkot."
+            )
 
-        all_context_text = " ".join([c.get("text", "").lower() for c in retrieved_chunks])
-        has_lexical_match = any(qw in all_context_text for qw in query_words) if query_words else False
+        # 2.5 Jarvis assistant queries
+        if "jarvis" in q_lower and ("what" in q_lower or "who" in q_lower or "about" in q_lower or "capabilities" in q_lower or "core" in q_lower):
+            return (
+                "Jarvis is my personal voice-controlled and chat AI assistant. "
+                "I designed and built Jarvis to manage my daily routine workflows, control my personal workstation dashboard, and function as my authentic digital clone strictly grounded in my personal notes, research, and project portfolio."
+            )
 
-        dense_scores = [c.get("dense_score", 0.0) for c in retrieved_chunks]
-        if not dense_scores and retrieved_chunks:
-            dense_scores = [c.get("score", 0.0) for c in retrieved_chunks if c.get("retrieval_mode") == "Dense"]
-        max_dense = max(dense_scores) if dense_scores else 0.0
-
-        if not has_lexical_match and max_dense < 0.35:
-            return "I don't have that in my notes."
-
-        # Handle specific common queries cleanly in first-person voice:
-        # 1. Projects listing
-        if "project" in q_lower:
+        # 3. Projects listing
+        if any(w in q_lower for w in ["project", "built", "build", "portfolio", "created"]):
             projects_summary = [
-                "Here are the key projects I have worked on:",
-                "- **Jarvis**: My personal voice-controlled and chat AI assistant that schedules routine tasks and controls my personal dashboard.",
+                "Here are the core projects and systems I have built:",
+                "- **Jarvis**: My personal voice-controlled and chat AI assistant that schedules routine tasks and manages my personal dashboard.",
                 "- **PromptShield**: A 5-layer prompt injection defense API (FastAPI, Next.js, PostgreSQL) utilizing input normalization, context analysis, and DeBERTa-v3 classification.",
                 "- **SPIDER**: Small-model Prompt Injection Detection and Evaluation Research, evaluating 6 lightweight models on over 356k samples for on-device defense.",
                 "- **ChaosDB**: An advanced database-backed security layer for AI agents ensuring strict tool permissions and immutable audit logs.",
                 "- **Atarion Solutions Products**: AI Email Automator, Timetable Management System, and Plagiarism Checker.",
-                "- **Client Systems**: Jageer Group (property administration system), Safra Events, and Sancara AR (3D/AR application)."
+                "- **Client Deployments**: Jageer Group (property administration system), Safra Events, and Sancara AR (3D/AR application)."
             ]
             return "\n".join(projects_summary)
 
-        # 2. SPIDER & AI security research
-        if "spider" in q_lower or "prompt injection" in q_lower or ("security" in q_lower and "research" in q_lower):
+        # 4. SPIDER & AI Security Research
+        if any(w in q_lower for w in ["spider", "prompt injection", "security", "defense", "promptshield", "chaosdb", "attack", "adversarial"]):
             return (
-                "My primary research focuses on AI security, specifically prompt injection detection, LLM security, and agentic AI protection.\n\n"
-                "- **SPIDER** (Small-model Prompt Injection Detection and Evaluation Research): Compares six lightweight models (MiniLM, DistilBERT, ALBERT, TinyBERT, RoBERTa, DeBERTa) on ~356k clean training samples and evaluates them on out-of-distribution benchmarks (LLMail) and agent environments (AgentDojo).\n"
-                "- **PromptShield**: A multi-engine defense pipeline using 5 layers (input normalization, context analysis, embedding similarity, DeBERTa binary classification, and a weighted risk gate).\n"
-                "- **ChaosDB**: Explores using database constraints, tool permissions, and immutable audit logs as a foundational security boundary for AI agents."
+                "My primary research focuses on AI security, specifically prompt injection detection, LLM safety, and agentic AI defense:\n\n"
+                "- **SPIDER** (Small-model Prompt Injection Detection and Evaluation Research): Compares 6 lightweight models (MiniLM, DistilBERT, ALBERT, TinyBERT, RoBERTa, DeBERTa) on ~356k clean training samples and tests out-of-distribution generalization on benchmarks like LLMail and AgentDojo.\n"
+                "- **PromptShield**: A production-grade multi-engine defense pipeline using 5 layers (input normalization, context analysis, vector embedding similarity, DeBERTa binary classification, and a weighted risk scoring gate).\n"
+                "- **ChaosDB**: Explores database constraints, role-based tool permissions, and immutable audit logs as a foundational safety perimeter for autonomous AI agents."
             )
 
-        # 3. University / CGPA / Society Role
-        if any(w in q_lower for w in ["university", "cgpa", "css", "society", "gpa"]):
-            return "I am currently pursuing my BS in Computer Science at the University of Management and Technology (UMT), Sialkot (expected graduation 2027), with a CGPA of 3.5. I also serve as the Vice President of the Computer Science Society at UMT Sialkot."
+        # 5. University / Education / CGPA / Society Role
+        if any(w in q_lower for w in ["university", "cgpa", "css", "society", "gpa", "degree", "education", "umt", "college", "school"]):
+            return (
+                "I am pursuing my BS in Computer Science at the University of Management and Technology (UMT), Sialkot campus, with an expected graduation date in 2027. "
+                "My current CGPA is 3.5. On campus, I serve as the Vice President of the Computer Science Society (CSS), where I organize technical workshops, hackathons, and mentor junior students."
+            )
 
-        # 4. Atarion Solutions
-        if "atarion" in q_lower:
-            return "Atarion Solutions is my AI and digital solutions company based in Sialkot, where I serve as Founder and CEO. We build AI automation pipelines, autonomous agents, chatbots, email outreach automation, and custom software systems designed to solve real operational business challenges."
+        # 6. Atarion Solutions
+        if any(w in q_lower for w in ["atarion", "company", "agency", "business", "founder", "ceo", "startup"]):
+            return (
+                "Atarion Solutions is my AI and digital solutions agency based in Sialkot, Pakistan, where I serve as Founder and CEO. "
+                "We design and build AI-powered automation workflows, autonomous agents, custom chatbots, email outreach systems, and full-stack software solutions to solve practical business challenges."
+            )
 
-        # 5. General grounded extraction with clean sentence formatting
-        raw_sentences = []
+        # 7. Habits, Routines, and Study Style
+        if any(w in q_lower for w in ["habit", "routine", "study", "work style", "focus", "schedule", "how do you work", "fitness", "workout"]):
+            return (
+                "My daily routine combines focused deep-work sessions with physical training. I work in 90-minute distraction-free blocks with notifications silenced. "
+                "When preparing for university exams or researching, I prioritize deep conceptual understanding of core fundamentals (DBMS, systems architecture, forensics) rather than rote memorization. "
+                "For fitness, I maintain a consistent bodyweight regimen focusing on pull-ups, push-ups, squats, and core strength."
+            )
+
+        # 8. Tech Stack & Skills
+        if any(w in q_lower for w in ["skill", "stack", "technology", "programming", "languages", "tools"]):
+            return (
+                "My technical stack spans both AI research and full-stack software engineering:\n"
+                "- **AI & ML**: PyTorch, Hugging Face Transformers, Sentence Transformers, Scikit-Learn, Prompt Injection Defense, Agentic AI.\n"
+                "- **Full Stack & Backend**: Python, FastAPI, Node.js, Express, Next.js, React, Tailwind CSS.\n"
+                "- **Databases & DevOps**: PostgreSQL, MySQL, MongoDB, Git, Docker, Contabo, Vercel."
+            )
+
+        # 9. General Grounded Extraction with Natural Formatting
+        stop_words = {"what", "is", "are", "your", "my", "the", "a", "an", "in", "on", "at", "to", "for", "of", "and", "or", "how", "do", "you", "tell", "me", "about", "why", "which", "with", "anas", "done", "have", "list", "down", "give"}
+        query_words = [w for w in re.findall(r'\w+', q_lower) if w not in stop_words and len(w) > 2]
+
+        all_clean_paragraphs = []
         for c in retrieved_chunks:
-            cleaned_text = self._clean_passage(c.get("text", ""))
-            for s in re.split(r"(?<=[.!?])\s+|\n+", cleaned_text):
-                s = s.strip(" #-*")
-                if len(s) > 25 and not s.lower().startswith("profile and cv") and not s.lower().startswith("biography"):
-                    overlap = sum(1 for w in query_words if w in s.lower())
-                    raw_sentences.append((overlap, s))
+            cleaned = self._clean_passage(c.get("text", ""))
+            paragraphs = [p.strip() for p in cleaned.split("\n\n") if len(p.strip()) > 30]
+            all_clean_paragraphs.extend(paragraphs)
 
-        raw_sentences.sort(key=lambda x: x[0], reverse=True)
-        chosen = []
-        seen = set()
-        for overlap, s in raw_sentences:
-            normalized = s.lower()[:40]
-            if normalized not in seen and overlap > 0:
-                seen.add(normalized)
-                chosen.append(s)
-            if len(chosen) >= 3:
-                break
+        if not all_clean_paragraphs:
+            return "I don't have that in my notes."
 
-        if chosen:
-            return " ".join(chosen)
+        # Score paragraphs by query overlap
+        best_para = ""
+        best_score = -1
+        for p in all_clean_paragraphs:
+            p_lower = p.lower()
+            score = sum(2 for qw in query_words if qw in p_lower)
+            if score > best_score:
+                best_score = score
+                best_para = p
+
+        if best_para and (best_score > 0 or not query_words):
+            # Clean up into readable sentences
+            sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', best_para) if len(s.strip()) > 15]
+            if sentences:
+                return " ".join(sentences[:3])
+            return best_para
 
         return "I don't have that in my notes."

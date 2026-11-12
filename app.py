@@ -55,7 +55,7 @@ def format_evidence_html(chunks: List[Dict[str, Any]], note: str = "") -> str:
     """Renders sleek cyber-styled evidence cards with score breakdowns."""
     if not chunks:
         msg = note if note else "Ask JARVIS a question or click a benchmark query to inspect retrieved context passages and similarity scores in real time."
-        return f'<div style="border:1px dashed rgba(56,189,248,0.3);background:#071126;border-radius:12px;padding:16px;text-align:center;color:#94a3b8;font-size:12.5px;">{msg}</div>'
+        return f'<div style="border:1px dashed rgba(56,189,248,0.3);background:#071126;border-radius:10px;padding:12px;text-align:center;color:#94a3b8;font-size:12px;">{msg}</div>'
 
     cards = []
     for idx, c in enumerate(chunks, start=1):
@@ -64,16 +64,16 @@ def format_evidence_html(chunks: List[Dict[str, Any]], note: str = "") -> str:
         score = c.get("score", 0.0)
         mode_label = c.get("retrieval_mode", "RRF")
         text = c.get("text", "")
-        snippet = text[:320] + ("..." if len(text) > 320 else "")
+        snippet = text[:300] + ("..." if len(text) > 300 else "")
 
         card = f"""
-        <div style="background:#07122b;border:1px solid #1e3a8a;border-radius:10px;padding:12px;margin-bottom:10px;box-shadow:0 4px 12px rgba(0,0,0,0.3);">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px;">
-            <span style="background:linear-gradient(135deg,#0284c7,#0369a1);color:#ffffff;font-weight:bold;padding:2px 8px;border-radius:6px;">#{idx}</span>
+        <div style="background:#07122b;border:1px solid #1e3a8a;border-radius:8px;padding:10px;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:11.5px;">
+            <span style="background:linear-gradient(135deg,#0284c7,#0369a1);color:#ffffff;font-weight:bold;padding:1px 6px;border-radius:4px;">#{idx}</span>
             <span style="color:#38bdf8;font-family:monospace;font-weight:600;">{source} (Chunk #{cid})</span>
-            <span style="margin-left:auto;color:#7dd3fc;font-family:monospace;font-weight:bold;background:#0b1d44;border:1px solid rgba(56,189,248,0.4);padding:2px 8px;border-radius:6px;">{mode_label}: {score}</span>
+            <span style="margin-left:auto;color:#7dd3fc;font-family:monospace;font-weight:bold;background:#0b1d44;border:1px solid rgba(56,189,248,0.4);padding:1px 6px;border-radius:4px;">{mode_label}: {score}</span>
           </div>
-          <div style="font-size:12px;line-height:1.6;color:#cbd5e1;border-left:3px solid #0284c7;padding-left:10px;">{snippet}</div>
+          <div style="font-size:12px;line-height:1.5;color:#cbd5e1;border-left:2px solid #0284c7;padding-left:8px;">{snippet}</div>
         </div>
         """
         cards.append(card)
@@ -127,25 +127,27 @@ body, .gradio-container {
     background-color: #030712 !important;
     color: #f1f5f9 !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-    max-width: 1100px !important;
-    margin: 0 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 6px 14px !important;
+    box-sizing: border-box !important;
 }
 
-/* Header Container */
+/* Compact Header */
 .header-box {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 16px 20px;
+    gap: 12px;
+    padding: 10px 14px;
     background: radial-gradient(circle at 10% 20%, #0c1a3b, #050b1a);
     border: 1px solid #1e3a8a;
-    border-radius: 14px;
-    margin-bottom: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    border-radius: 10px;
+    margin-bottom: 8px;
 }
 .arc-logo {
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
     animation: rotateLogo 24s linear infinite;
 }
 @keyframes rotateLogo { to { transform: rotate(360deg); } }
@@ -155,9 +157,10 @@ body, .gradio-container {
     background: #0b1739 !important;
     border: 1px solid #1e3a8a !important;
     color: #38bdf8 !important;
-    border-radius: 8px !important;
-    font-size: 12px !important;
+    border-radius: 6px !important;
+    font-size: 11.5px !important;
     font-weight: 500 !important;
+    padding: 4px 8px !important;
     transition: all 0.2s ease !important;
 }
 .benchmark-btn:hover {
@@ -178,17 +181,13 @@ button.primary {
 .gr-accordion {
     background: #071126 !important;
     border: 1px solid #1e293b !important;
-    border-radius: 10px !important;
-    margin-top: 12px !important;
+    border-radius: 8px !important;
+    margin-top: 8px !important;
 }
 .gr-accordion > .label-wrap {
     color: #38bdf8 !important;
     font-weight: 600 !important;
-}
-
-/* Chatbot Area */
-.bubble-wrap {
-    background-color: #050b1a !important;
+    font-size: 13px !important;
 }
 """
 
@@ -196,8 +195,8 @@ with gr.Blocks(title="JARVIS - Anas Digital Clone") as demo:
     # 1. Header Banner with Arc Reactor Branding
     gr.HTML("""
     <div class="header-box">
-      <div style="width:48px;height:48px;display:grid;place-items:center;background:#050d24;border-radius:12px;border:1px solid #0284c7;box-shadow:0 0 16px rgba(2,132,199,0.4);">
-        <svg class="arc-logo" viewBox="0 0 64 64" width="40" height="40">
+      <div style="width:40px;height:40px;display:grid;place-items:center;background:#050d24;border-radius:10px;border:1px solid #0284c7;box-shadow:0 0 12px rgba(2,132,199,0.4);flex-shrink:0;">
+        <svg class="arc-logo" viewBox="0 0 64 64" width="32" height="32">
           <circle cx="32" cy="32" r="28" fill="none" stroke="#0284c7" stroke-width="2.5"/>
           <circle cx="32" cy="32" r="22" fill="none" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="3 4"/>
           <line x1="32" y1="6" x2="32" y2="12" stroke="#0284c7" stroke-width="3" stroke-linecap="round"/>
@@ -210,24 +209,25 @@ with gr.Blocks(title="JARVIS - Anas Digital Clone") as demo:
         </svg>
       </div>
       <div style="flex-grow:1;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <h1 style="font-size:20px;margin:0;letter-spacing:1px;color:#f8fafc;">JARVIS</h1>
-          <span style="background:#0284c7;color:#ffffff;font-size:10px;font-weight:bold;padding:2px 8px;border-radius:12px;letter-spacing:0.5px;">ONLINE</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:17px;font-weight:bold;letter-spacing:1px;color:#f8fafc;">JARVIS</span>
+          <span style="background:#0284c7;color:#ffffff;font-size:10px;font-weight:bold;padding:1px 6px;border-radius:6px;">ONLINE</span>
+          <span style="color:#38bdf8;font-size:12px;font-weight:600;">• Autonomous Digital Clone of Anas</span>
         </div>
-        <p style="font-size:12.5px;margin:2px 0 0 0;color:#38bdf8;font-weight:600;">Autonomous Digital Clone of Anas • Hybrid RAG (BM25 + Dense Cosine + RRF)</p>
-        <p style="font-size:11.5px;color:#94a3b8;margin:3px 0 0 0;">Strict Grounding: Verified notes on Atarion Solutions, SPIDER AI Security, and UMT Sialkot. Unverified questions refuse with <i>"I don't have that in my notes."</i></p>
+        <p style="font-size:11.5px;color:#94a3b8;margin:2px 0 0 0;">Strict Grounding: Verified notes on Atarion Solutions, SPIDER AI Security, and UMT Sialkot. Unverified questions refuse with <i>"I don't have that in my notes."</i></p>
       </div>
     </div>
     """)
 
-    # 2. Main Dialogue Stream (Full Width on Top)
+    # 2. Main Dialogue Stream (Full Width, show_copy_button=False)
     chatbot = gr.Chatbot(
         label="JARVIS Neural Dialogue",
-        height=480,
+        height=360,
+        show_copy_button=False,
         value=[
             {
                 "role": "assistant",
-                "content": "Hello, I am JARVIS, the autonomous digital clone of Anas. I answer strictly from his verified notes, CV, Atarion Solutions projects, research and study habits. Ask me anything, or click a benchmark query below!\n\n*(Tip: If you'd like to use a specific LLM like Mistral, Groq, or Gemini, expand the Control Station accordion below to enter your key.)*"
+                "content": "Hello, I am JARVIS, the autonomous digital clone of Anas. I answer strictly from his verified notes, CV, Atarion Solutions projects, research and study habits. Ask me anything, or click a benchmark query below!\n\n*(Tip: Instant grounded clone mode is active. You can also paste your Mistral, Groq, Gemini, or HF key into Settings below anytime.)*"
             }
         ]
     )
@@ -253,7 +253,7 @@ with gr.Blocks(title="JARVIS - Anas Digital Clone") as demo:
         btn_q5 = gr.Button("🎂 Cake Recipe (Refusal)", elem_classes=["benchmark-btn"], size="sm")
 
     # 5. Expandable & Contractable Control Settings (Below the Chat Panel)
-    with gr.Accordion("⚙️ RAG Control Station & Custom LLM API Key", open=False):
+    with gr.Accordion("⚙️ RAG Control Station & Custom LLM API Key (Mistral, Groq, Gemini, HF)", open=False):
         with gr.Row():
             mode_radio = gr.Radio(
                 choices=["Hybrid (RRF)", "Dense only", "BM25 only"],
@@ -270,9 +270,9 @@ with gr.Blocks(title="JARVIS - Anas Digital Clone") as demo:
             )
         api_key_box = gr.Textbox(
             label="🔑 Custom LLM API Key (Optional)",
-            placeholder="Paste your Mistral API key, Groq, Google Gemini, or Hugging Face token...",
+            placeholder="Paste your Mistral API key, Groq (gsk_...), Gemini (AIza...), or Hugging Face (hf_...) token...",
             type="password",
-            info="Supports Mistral AI, Groq, Google Gemini, or Hugging Face tokens. When left empty, instant offline grounded synthesis is used automatically."
+            info="Supports Mistral AI, Groq (Free), Google Gemini (Free), or Hugging Face tokens. When left empty, instant offline grounded synthesis is used automatically."
         )
 
     # 6. Expandable & Contractable Retrieved Evidence Inspection (Below the Chat Panel)
