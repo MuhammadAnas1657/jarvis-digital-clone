@@ -101,7 +101,8 @@ with gr.Blocks(title="JARVIS") as demo:
 
 # Attach custom routes directly to demo.app
 demo.app.add_api_route("/", index, methods=["GET"])
-demo.app.add_api_route("/api/chat", api_chat, methods=["POST"])
+demo.app.add_api_route("/chat", api_chat, methods=["POST"])
+demo.app.add_api_route("/custom_api/chat", api_chat, methods=["POST"])
 
 if __name__ == "__main__":
     demo.launch(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", 7860)))

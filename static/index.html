@@ -248,7 +248,7 @@ async function ask(text){
   t.querySelector('.bubble').innerHTML = '<span class="typing"><span></span><span></span><span></span></span>';
   try{
     const hf_token = localStorage.getItem('jarvis-api-key') || $('#hfToken')?.value.trim() || undefined;
-    const res = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,mode,top_k:+$('#k').value,history,hf_token})});
+    const res = await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,mode,top_k:+$('#k').value,history,hf_token})});
     const d = await res.json();
     t.querySelector('.bubble').innerHTML = md(d.reply);
     history.push({role:'user',content:text},{role:'assistant',content:d.reply});
