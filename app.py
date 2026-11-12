@@ -152,21 +152,24 @@ body, .gradio-container {
 }
 @keyframes rotateLogo { to { transform: rotate(360deg); } }
 
-/* Quick Question Chip Buttons */
+/* Sleek Floating Pill Chips */
 .benchmark-btn {
-    background: #0b1739 !important;
-    border: 1px solid #1e3a8a !important;
+    background: #071738 !important;
+    border: 1px solid #0284c7 !important;
     color: #38bdf8 !important;
-    border-radius: 6px !important;
-    font-size: 11.5px !important;
+    border-radius: 20px !important;
+    font-size: 11px !important;
     font-weight: 500 !important;
-    padding: 4px 8px !important;
-    transition: all 0.2s ease !important;
+    padding: 4px 12px !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
 }
 .benchmark-btn:hover {
-    background: #0284c7 !important;
+    background: linear-gradient(135deg, #0284c7, #0ea5e9) !important;
     color: #ffffff !important;
     border-color: #38bdf8 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4) !important;
 }
 
 /* Primary Action Buttons */
@@ -217,7 +220,7 @@ with gr.Blocks(title="JARVIS - Anas Digital Clone") as demo:
         <div style="display:flex;align-items:center;gap:8px;">
           <span style="font-size:17px;font-weight:bold;letter-spacing:1px;color:#f8fafc;">JARVIS</span>
           <span style="background:#0284c7;color:#ffffff;font-size:10px;font-weight:bold;padding:1px 6px;border-radius:6px;">ONLINE</span>
-          <span style="color:#38bdf8;font-size:12px;font-weight:600;">• Autonomous Digital Clone of Anas</span>
+          <span style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.4);font-size:10.5px;font-weight:600;padding:1px 8px;border-radius:12px;">MODE: DEEP GROUNDED NARRATIVE</span>
         </div>
         <p style="font-size:11.5px;color:#94a3b8;margin:2px 0 0 0;">Strict Grounding: Verified notes on Atarion Solutions, SPIDER AI Security, and UMT Sialkot. Unverified questions refuse with <i>"I don't have that in my notes."</i></p>
       </div>

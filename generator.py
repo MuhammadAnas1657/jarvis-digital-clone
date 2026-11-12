@@ -230,86 +230,120 @@ class CloneGenerator:
 
     def _offline_grounded_answer(self, query: str, retrieved_chunks: List[Dict[str, Any]]) -> str:
         """
-        Humanized, grounded synthesis when API token is not provided or unreachable.
-        Answers naturally in Anas's authentic first-person voice.
+        Deep multi-paragraph narrative synthesis in Anas's authentic first-person voice.
+        Explains motivations, architecture, features, and real-world usage in full detail.
         """
         q_lower = query.lower().strip()
 
-        # 1. Check for off-topic queries (honest refusal)
-        disallowed = ["recipe", "cake", "cook", "bake", "pasta", "weather", "stocks", "stock market", "bitcoin", "crypto price", "cricket match", "quantum gravity"]
+        # 1. Strict Refusal for out-of-domain topics
+        disallowed = [
+            "recipe", "cake", "cook", "bake", "pasta", "pizza", "weather",
+            "stocks", "stock market", "bitcoin", "crypto price", "cricket match",
+            "quantum gravity", "space exploration", "olympic"
+        ]
         if any(unrelated in q_lower for unrelated in disallowed):
             return "I don't have that in my notes."
 
-        # 2. Introduction / Identity queries
-        intro_keywords = ["introduce", "who is anas", "who are you", "tell me about yourself", "tell me about anas", "about anas", "background of anas", "who are anas", "intro of anas", "summary of anas", "meet anas", "yourself"]
+        # 2. Jarvis assistant queries (Full Deep Narrative)
+        if "jarvis" in q_lower:
+            return (
+                "Jarvis is my personal voice-controlled and chat-based AI assistant, which I designed and built from scratch to act as a central command hub for my daily life and workstation.\n\n"
+                "**Core Purpose & Motivation:**\n"
+                "I built Jarvis because I was frustrated with constantly toggling between different tabs, windows, and administrative dashboards. Rather than having a passive chatbot that merely answers trivia, I wanted an active, autonomous assistant that truly understands my personal routine, schedule, and study habits, and can take direct actions on my behalf.\n\n"
+                "**Architecture & Capabilities:**\n"
+                "- **Dual Interface**: It supports hands-free voice control for rapid updates while working, as well as full chat-based interaction.\n"
+                "- **Workstation & Dashboard Control**: It directly interfaces with my personal productivity dashboard to manage daily priorities, deadlines, and project statuses without manual clicks.\n"
+                "- **Routine Scheduling**: It handles routine workflow scheduling, calendar management, and time-blocking for my 90-minute deep-work sessions.\n"
+                "- **Autonomous Clone Persona**: This digital clone interface is named after Jarvis, engineered with a hybrid RAG pipeline (BM25 lexical + dense cosine embeddings + Reciprocal Rank Fusion) so that it communicates strictly in my authentic first-person voice using only my verified notes and project history."
+            )
+
+        # 3. Introduction / Identity queries (Full Deep Narrative)
+        intro_keywords = [
+            "introduce", "who is anas", "who are you", "tell me about yourself",
+            "tell me about anas", "about anas", "background of anas", "who are anas",
+            "intro of anas", "summary of anas", "meet anas", "yourself"
+        ]
         if any(w in q_lower for w in intro_keywords):
             return (
-                "I am Anas, a 22-year-old Computer Science undergraduate at the University of Management and Technology (UMT) Sialkot, graduating in 2027 with a CGPA of 3.5.\n\n"
-                "I am the Founder and CEO of Atarion Solutions, an AI and digital solutions agency where we engineer autonomous AI agents, workflow automations, and web applications. In addition to running Atarion, I conduct AI security research focused on prompt injection defense (SPIDER and PromptShield), and serve as the Vice President of the Computer Science Society at UMT Sialkot."
+                "I am Anas, a 22-year-old Computer Science undergraduate at the University of Management and Technology (UMT) Sialkot, currently maintaining a 3.5 CGPA with an expected graduation in 2027.\n\n"
+                "**Professional & Entrepreneurial Background:**\n"
+                "I am the Founder and CEO of Atarion Solutions, an AI and digital solutions agency based in Sialkot. At Atarion, we design and deploy autonomous AI agents, workflow automation pipelines, enterprise web systems, and custom chatbots aimed at solving real business operational bottlenecks.\n\n"
+                "**Research & Academic Leadership:**\n"
+                "My primary academic and technical research centers on AI security—specifically Small-model Prompt Injection Detection and Evaluation Research (SPIDER) and PromptShield, a 5-layer multi-engine defense gateway. Alongside my engineering work, I serve as the Vice President of the Computer Science Society (CSS) at UMT Sialkot, where I lead hackathons, technical workshops, and developer mentoring initiatives."
             )
 
-        # 2.5 Jarvis assistant queries
-        if "jarvis" in q_lower and ("what" in q_lower or "who" in q_lower or "about" in q_lower or "capabilities" in q_lower or "core" in q_lower):
-            return (
-                "Jarvis is my personal voice-controlled and chat AI assistant. "
-                "I designed and built Jarvis to manage my daily routine workflows, control my personal workstation dashboard, and function as my authentic digital clone strictly grounded in my personal notes, research, and project portfolio."
-            )
-
-        # 3. Projects listing
-        if any(w in q_lower for w in ["project", "built", "build", "portfolio", "created"]):
-            projects_summary = [
-                "Here are the core projects and systems I have built:",
-                "- **Jarvis**: My personal voice-controlled and chat AI assistant that schedules routine tasks and manages my personal dashboard.",
-                "- **PromptShield**: A 5-layer prompt injection defense API (FastAPI, Next.js, PostgreSQL) utilizing input normalization, context analysis, and DeBERTa-v3 classification.",
-                "- **SPIDER**: Small-model Prompt Injection Detection and Evaluation Research, evaluating 6 lightweight models on over 356k samples for on-device defense.",
-                "- **ChaosDB**: An advanced database-backed security layer for AI agents ensuring strict tool permissions and immutable audit logs.",
-                "- **Atarion Solutions Products**: AI Email Automator, Timetable Management System, and Plagiarism Checker.",
-                "- **Client Deployments**: Jageer Group (property administration system), Safra Events, and Sancara AR (3D/AR application)."
-            ]
-            return "\n".join(projects_summary)
-
-        # 4. SPIDER & AI Security Research
+        # 4. SPIDER & AI Security Research (Full Deep Narrative)
         if any(w in q_lower for w in ["spider", "prompt injection", "security", "defense", "promptshield", "chaosdb", "attack", "adversarial"]):
             return (
-                "My primary research focuses on AI security, specifically prompt injection detection, LLM safety, and agentic AI defense:\n\n"
-                "- **SPIDER** (Small-model Prompt Injection Detection and Evaluation Research): Compares 6 lightweight models (MiniLM, DistilBERT, ALBERT, TinyBERT, RoBERTa, DeBERTa) on ~356k clean training samples and tests out-of-distribution generalization on benchmarks like LLMail and AgentDojo.\n"
-                "- **PromptShield**: A production-grade multi-engine defense pipeline using 5 layers (input normalization, context analysis, vector embedding similarity, DeBERTa binary classification, and a weighted risk scoring gate).\n"
-                "- **ChaosDB**: Explores database constraints, role-based tool permissions, and immutable audit logs as a foundational safety perimeter for autonomous AI agents."
+                "My academic research focuses on adversarial machine learning, prompt injection defenses, and the security boundaries of agentic AI systems:\n\n"
+                "**1. SPIDER Research (Small-model Prompt Injection Detection & Evaluation):**\n"
+                "SPIDER systematically evaluates whether lightweight, on-device transformer models can provide deterministic, low-latency defense against prompt injection attacks. I train and compare 6 small models (MiniLM, DistilBERT, ALBERT, TinyBERT, RoBERTa, and DeBERTa) on a balanced corpus of approximately 356,000 clean training samples, validated on 50,000 samples and benchmarked against 101,000 in-distribution samples. To measure real-world resilience, I evaluate them against out-of-distribution attacks (LLMail) and dynamic agentic environments (AgentDojo with a Mistral-powered agent).\n\n"
+                "**2. PromptShield (Multi-Engine Defense API):**\n"
+                "PromptShield is a production-ready defense gateway built with FastAPI, Next.js, PostgreSQL, SQLAlchemy, JWT, and Server-Sent Events. It discards brittle LLM verifiers in favor of five structured defense layers: L1 English input normalization, L2 context analysis across system/user prompts, L3 embedding similarity using E5-large-v2, L4 a fine-tuned DeBERTa-v3-base binary classifier, and L5 a weighted risk score gate. The admin dashboard features a 28-step live inspection engine with leave-one-out explainability.\n\n"
+                "**3. ChaosDB (Database-Backed Agent Guardrails):**\n"
+                "ChaosDB is an architectural framework proposing that databases—rather than probabilistic prompts—must serve as the definitive security perimeter for AI agents. By enforcing immutable audit logs, strict role-based tool execution permissions, and event sourcing within PostgreSQL, graph, and vector stores, ChaosDB ensures that even if an agent's prompt context is compromised, the agent is physically blocked from executing unauthorized actions."
             )
 
-        # 5. University / Education / CGPA / Society Role
-        if any(w in q_lower for w in ["university", "cgpa", "css", "society", "gpa", "degree", "education", "umt", "college", "school"]):
-            return (
-                "I am pursuing my BS in Computer Science at the University of Management and Technology (UMT), Sialkot campus, with an expected graduation date in 2027. "
-                "My current CGPA is 3.5. On campus, I serve as the Vice President of the Computer Science Society (CSS), where I organize technical workshops, hackathons, and mentor junior students."
-            )
-
-        # 6. Atarion Solutions
+        # 5. Atarion Solutions (Full Deep Narrative)
         if any(w in q_lower for w in ["atarion", "company", "agency", "business", "founder", "ceo", "startup"]):
             return (
-                "Atarion Solutions is my AI and digital solutions agency based in Sialkot, Pakistan, where I serve as Founder and CEO. "
-                "We design and build AI-powered automation workflows, autonomous agents, custom chatbots, email outreach systems, and full-stack software solutions to solve practical business challenges."
+                "Atarion Solutions is an AI and digital solutions agency founded and led by me as CEO in Sialkot, Pakistan. Our core philosophy is to build practical software that solves actual operational bottlenecks rather than billing hours for generic development.\n\n"
+                "**Core Products & Solutions:**\n"
+                "- **AI Email Automator**: An intelligent automation engine that streamlines B2B outreach, email workflows, and personalized cold contact sequences.\n"
+                "- **Timetable Management System**: A specialized academic scheduling platform that automatically ingests spreadsheet course data, detects schedule conflicts, and generates optimal timetables based on teacher availability preferences.\n"
+                "- **Plagiarism Checker**: An advanced textual similarity analysis tool designed to inspect originality and document overlap.\n"
+                "- **Prompt Injection Shield**: Enterprise-facing API defense modules based on my research findings.\n\n"
+                "**Client Implementations:**\n"
+                "We have also architected and deployed production web applications for external clients, including Jageer Group (a property administration platform), Safra Events, and Sancara AR (a 3D augmented-reality web experience)."
             )
 
-        # 7. Habits, Routines, and Study Style
-        if any(w in q_lower for w in ["habit", "routine", "study", "work style", "focus", "schedule", "how do you work", "fitness", "workout"]):
+        # 6. Projects Portfolio Listing
+        if any(w in q_lower for w in ["project", "built", "build", "portfolio", "created"]):
             return (
-                "My daily routine combines focused deep-work sessions with physical training. I work in 90-minute distraction-free blocks with notifications silenced. "
-                "When preparing for university exams or researching, I prioritize deep conceptual understanding of core fundamentals (DBMS, systems architecture, forensics) rather than rote memorization. "
-                "For fitness, I maintain a consistent bodyweight regimen focusing on pull-ups, push-ups, squats, and core strength."
+                "Here is an overview of the core projects and systems I have architected and built:\n\n"
+                "- **Jarvis**: Personal voice-controlled and chat AI assistant managing daily routine schedules and my workstation dashboard.\n"
+                "- **PromptShield**: A 5-layer prompt injection defense API (FastAPI, Next.js, PostgreSQL, DeBERTa-v3) featuring real-time risk scoring and process visualization.\n"
+                "- **SPIDER Benchmark**: Research comparing 6 lightweight models on 356k samples for robust on-device prompt injection detection.\n"
+                "- **ChaosDB**: Security architecture enforcing database permissions, audit logs, and event sourcing as a barrier for autonomous AI agents.\n"
+                "- **Atarion AI Products**: AI Email Automator, Timetable Management System, and Plagiarism Checker.\n"
+                "- **Production Client Systems**: Jageer Group (property administration system), Safra Events, and Sancara AR (3D/AR application)."
             )
 
-        # 8. Tech Stack & Skills
+        # 7. University, Academic Standing & Society Leadership
+        if any(w in q_lower for w in ["university", "cgpa", "css", "society", "gpa", "degree", "education", "umt", "college"]):
+            return (
+                "I am currently pursuing a Bachelor of Science in Computer Science at the University of Management and Technology (UMT), Sialkot campus, with an expected graduation in 2027.\n\n"
+                "**Academic Record & Focus Areas:**\n"
+                "I currently hold a 3.5 CGPA. My coursework and self-directed study focus heavily on advanced computer systems: Database Management Systems (transactions, write-ahead logging, DDL/DML/DCL), Computer Architecture, Digital Forensics, Network Security, and Adversarial Machine Learning. I prioritize mastering core foundational concepts before building applications.\n\n"
+                "**Computer Science Society (CSS) Leadership:**\n"
+                "I serve as the Vice President of the Computer Science Society at UMT Sialkot. In this role, I coordinate campus hackathons, technical speaker sessions, and coding bootcamps, and actively mentor junior students in full-stack web development and AI fundamentals."
+            )
+
+        # 8. Study & Work Habits, Fitness & Routine
+        if any(w in q_lower for w in ["habit", "routine", "study", "work style", "focus", "schedule", "fitness", "workout", "lifestyle", "how do you work"]):
+            return (
+                "My daily work and learning routines are structured around deep work, conceptual rigor, and physical discipline:\n\n"
+                "**1. Focused Deep Work:**\n"
+                "I structure development and research in 90-minute distraction-free blocks. During these sprints, all smartphone notifications are silenced, and I focus exclusively on one technical objective at a time.\n\n"
+                "**2. Concept-First Learning:**\n"
+                "Whether studying for examinations or designing new systems, I insist on understanding core mechanisms first (e.g., how write-ahead logs work, latency percentiles, database query planners) before jumping into code. I prefer concise, humanized academic summaries without fluff.\n\n"
+                "**3. Physical Training:**\n"
+                "To sustain high mental energy, I maintain a regular bodyweight fitness routine emphasizing pull-ups, push-ups, squats, dead hangs, and core strength training."
+            )
+
+        # 9. Technical Skills & Architecture Stack
         if any(w in q_lower for w in ["skill", "stack", "technology", "programming", "languages", "tools"]):
             return (
-                "My technical stack spans both AI research and full-stack software engineering:\n"
-                "- **AI & ML**: PyTorch, Hugging Face Transformers, Sentence Transformers, Scikit-Learn, Prompt Injection Defense, Agentic AI.\n"
-                "- **Full Stack & Backend**: Python, FastAPI, Node.js, Express, Next.js, React, Tailwind CSS.\n"
-                "- **Databases & DevOps**: PostgreSQL, MySQL, MongoDB, Git, Docker, Contabo, Vercel."
+                "My technical expertise spans both production full-stack engineering and applied AI research:\n\n"
+                "- **AI & Machine Learning**: Python, PyTorch, Hugging Face Transformers, Sentence Transformers, DeBERTa, RoBERTa, MiniLM, Scikit-Learn, Prompt Injection Defense, Agentic AI, RAG Systems.\n"
+                "- **Frontend Engineering**: Next.js (App Router), React.js, Tailwind CSS, TypeScript, JavaScript, HTML5/CSS3, Figma.\n"
+                "- **Backend & APIs**: Node.js, Express.js, FastAPI, RESTful API Design, Server-Sent Events (SSE), JWT & API-Key Authentication.\n"
+                "- **Databases & Architecture**: PostgreSQL, MySQL, MongoDB, SQLAlchemy, System Design, Scalable Database Modeling.\n"
+                "- **Infrastructure & DevOps**: Git, GitHub, Docker, Contabo VPS, Vercel, cPanel, Linux Administration."
             )
 
-        # 9. General Grounded Extraction with Natural Formatting
-        stop_words = {"what", "is", "are", "your", "my", "the", "a", "an", "in", "on", "at", "to", "for", "of", "and", "or", "how", "do", "you", "tell", "me", "about", "why", "which", "with", "anas", "done", "have", "list", "down", "give"}
+        # 10. General Grounded Extraction with Paragraph Cleaning
+        stop_words = {"what", "is", "are", "your", "my", "the", "a", "an", "in", "on", "at", "to", "for", "of", "and", "or", "how", "do", "you", "tell", "me", "about", "why", "which", "with", "anas", "done", "have", "list", "down", "give", "explain"}
         query_words = [w for w in re.findall(r'\w+', q_lower) if w not in stop_words and len(w) > 2]
 
         all_clean_paragraphs = []
@@ -321,21 +355,17 @@ class CloneGenerator:
         if not all_clean_paragraphs:
             return "I don't have that in my notes."
 
-        # Score paragraphs by query overlap
-        best_para = ""
-        best_score = -1
+        # Rank paragraphs by overlap
+        ranked_paras = []
         for p in all_clean_paragraphs:
             p_lower = p.lower()
             score = sum(2 for qw in query_words if qw in p_lower)
-            if score > best_score:
-                best_score = score
-                best_para = p
+            if score > 0 or not query_words:
+                ranked_paras.append((score, p))
 
-        if best_para and (best_score > 0 or not query_words):
-            # Clean up into readable sentences
-            sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', best_para) if len(s.strip()) > 15]
-            if sentences:
-                return " ".join(sentences[:3])
-            return best_para
+        ranked_paras.sort(key=lambda x: x[0], reverse=True)
+        if ranked_paras:
+            chosen_paragraphs = [p for _, p in ranked_paras[:2]]
+            return "\n\n".join(chosen_paragraphs)
 
         return "I don't have that in my notes."
