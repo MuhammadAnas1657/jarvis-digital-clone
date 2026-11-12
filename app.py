@@ -103,8 +103,8 @@ def chat_handler(message: str, chat_history: List[Dict[str, str]], mode: str, to
             chat_history.append({"role": "assistant", "content": decline_reply})
             return "", chat_history, format_evidence_html([], note="Query declined by guardrail: " + intent["reason"])
 
-        # 2. Retrieval
-        retrieved = rag.retrieve(query=message, mode=mode, top_k=int(top_k), use_reranker=False)
+        # 2. Retrieval with Cross-Encoder reranking
+        retrieved = rag.retrieve(query=message, mode=mode, top_k=int(top_k), use_reranker=True)
 
         # 3. Generation (supports Mistral, Groq, Gemini, HF, and clean offline fallback)
         reply = gen.generate_response(
