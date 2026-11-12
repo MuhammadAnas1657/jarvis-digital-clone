@@ -14,6 +14,18 @@ from typing import List, Dict, Optional
 from rag import HybridRAG
 from generator import CloneGenerator
 
+try:
+    import spaces
+    @spaces.GPU
+    def gpu_init():
+        return True
+    try:
+        gpu_init()
+    except Exception:
+        pass
+except ImportError:
+    pass
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 rag_engine: Optional[HybridRAG] = None
 generator: Optional[CloneGenerator] = None
