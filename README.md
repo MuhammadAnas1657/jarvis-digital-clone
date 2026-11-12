@@ -2,7 +2,7 @@
 title: JARVIS - Anas Digital Clone
 emoji: ⚡
 colorFrom: blue
-colorTo: cyan
+colorTo: indigo
 sdk: gradio
 sdk_version: 6.31.0
 app_file: app.py
