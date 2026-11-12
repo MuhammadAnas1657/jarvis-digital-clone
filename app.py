@@ -1,12 +1,12 @@
 """
 JARVIS - Autonomous Digital Clone of Anas (Hybrid RAG).
-Native Gradio 6.x Application designed for Hugging Face Spaces & Local Execution.
+Native Gradio Application designed for Hugging Face Spaces & Local Execution.
 Features:
 - BM25 Lexical + Dense Cosine (all-MiniLM-L6-v2) + Reciprocal Rank Fusion (RRF)
 - Strict Persona Grounding & Honest Refusal
 - Multi-Provider LLM: Mistral AI, Groq, Google Gemini, and Hugging Face Inference
-- Real-time Retrieved Context Evidence & Score Inspection Panel
-- ZeroGPU and CPU Basic Space compatibility
+- Full-width Dialogue Stream with Expandable Control Accordions & Evidence Panel
+- Cybernetic Jarvis Arc Reactor Theme (Unified Deep Space Navy & Neon Cyan)
 """
 import os
 import re
@@ -19,7 +19,7 @@ load_dotenv()
 from rag import HybridRAG
 from generator import CloneGenerator
 
-# Hugging Face ZeroGPU compatibility
+# Hugging Face ZeroGPU compatibility hook
 try:
     import spaces
     @spaces.GPU
@@ -54,8 +54,8 @@ def get_generator() -> CloneGenerator:
 def format_evidence_html(chunks: List[Dict[str, Any]], note: str = "") -> str:
     """Renders sleek cyber-styled evidence cards with score breakdowns."""
     if not chunks:
-        msg = note if note else "Ask JARVIS a question to inspect retrieved context passages and similarity scores in real time."
-        return f'<div style="border:1px dashed rgba(96,165,250,0.3);border-radius:12px;padding:16px;text-align:center;color:#8ea3c7;font-size:12.5px;">{msg}</div>'
+        msg = note if note else "Ask JARVIS a question or click a benchmark query to inspect retrieved context passages and similarity scores in real time."
+        return f'<div style="border:1px dashed rgba(56,189,248,0.3);background:#071126;border-radius:12px;padding:16px;text-align:center;color:#94a3b8;font-size:12.5px;">{msg}</div>'
 
     cards = []
     for idx, c in enumerate(chunks, start=1):
@@ -64,17 +64,16 @@ def format_evidence_html(chunks: List[Dict[str, Any]], note: str = "") -> str:
         score = c.get("score", 0.0)
         mode_label = c.get("retrieval_mode", "RRF")
         text = c.get("text", "")
-        # Short snippet preview
-        snippet = text[:280] + ("..." if len(text) > 280 else "")
+        snippet = text[:320] + ("..." if len(text) > 320 else "")
 
         card = f"""
-        <div style="background:#09142e;border:1px solid rgba(96,165,250,0.22);border-radius:12px;padding:12px;margin-bottom:10px;">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11.5px;">
-            <span style="background:linear-gradient(135deg,#2563eb,#0ea5e9);color:#fff;font-weight:bold;padding:1px 7px;border-radius:6px;">#{idx}</span>
-            <span style="color:#7dd3fc;font-family:monospace;font-weight:600;">{source} (Chunk #{cid})</span>
-            <span style="margin-left:auto;color:#22d3ee;font-family:monospace;font-weight:bold;border:1px solid rgba(34,211,238,0.3);padding:1px 7px;border-radius:6px;">{mode_label}: {score}</span>
+        <div style="background:#07122b;border:1px solid #1e3a8a;border-radius:10px;padding:12px;margin-bottom:10px;box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px;">
+            <span style="background:linear-gradient(135deg,#0284c7,#0369a1);color:#ffffff;font-weight:bold;padding:2px 8px;border-radius:6px;">#{idx}</span>
+            <span style="color:#38bdf8;font-family:monospace;font-weight:600;">{source} (Chunk #{cid})</span>
+            <span style="margin-left:auto;color:#7dd3fc;font-family:monospace;font-weight:bold;background:#0b1d44;border:1px solid rgba(56,189,248,0.4);padding:2px 8px;border-radius:6px;">{mode_label}: {score}</span>
           </div>
-          <div style="font-size:12px;line-height:1.5;color:#94a3b8;border-left:2px solid #38bdf8;padding-left:8px;">{snippet}</div>
+          <div style="font-size:12px;line-height:1.6;color:#cbd5e1;border-left:3px solid #0284c7;padding-left:10px;">{snippet}</div>
         </div>
         """
         cards.append(card)
@@ -82,157 +81,205 @@ def format_evidence_html(chunks: List[Dict[str, Any]], note: str = "") -> str:
 
 
 def chat_handler(message: str, chat_history: List[Dict[str, str]], mode: str, top_k: int, api_key: str):
-    """Processes user query through intent guardrails, RAG retrieval, and LLM generation."""
+    """Processes user query through intent guardrails, RAG retrieval, and LLM generation with fail-safe error isolation."""
     if not message or not message.strip():
         return "", chat_history, format_evidence_html([])
 
-    rag = get_rag()
-    gen = get_generator()
     chat_history = chat_history or []
 
-    # 1. Guardrail Intent Check
-    intent = rag.classify_intent(message)
-    if not intent["relevant"]:
-        decline_reply = "I only answer questions grounded in Anas's notes, projects and study habits. " + intent["reason"]
+    try:
+        rag = get_rag()
+        gen = get_generator()
+
+        # 1. Guardrail Intent Check
+        intent = rag.classify_intent(message)
+        if not intent["relevant"]:
+            decline_reply = "I only answer questions grounded in Anas's notes, projects and study habits. " + intent["reason"]
+            chat_history.append({"role": "user", "content": message})
+            chat_history.append({"role": "assistant", "content": decline_reply})
+            return "", chat_history, format_evidence_html([], note="Query declined by guardrail: " + intent["reason"])
+
+        # 2. Retrieval
+        retrieved = rag.retrieve(query=message, mode=mode, top_k=int(top_k), use_reranker=False)
+
+        # 3. Generation (supports Mistral, Groq, Gemini, HF, and clean offline fallback)
+        reply = gen.generate_response(
+            query=message,
+            retrieved_chunks=retrieved,
+            chat_history=chat_history,
+            token=api_key.strip() if api_key else None
+        )
+
         chat_history.append({"role": "user", "content": message})
-        chat_history.append({"role": "assistant", "content": decline_reply})
-        return "", chat_history, format_evidence_html([], note="Query declined by guardrail: " + intent["reason"])
+        chat_history.append({"role": "assistant", "content": reply})
+        evidence_html = format_evidence_html(retrieved)
+        return "", chat_history, evidence_html
 
-    # 2. Retrieval
-    retrieved = rag.retrieve(query=message, mode=mode, top_k=int(top_k), use_reranker=False)
-
-    # 3. Generation (supports Mistral, Groq, Gemini, HF, and clean offline fallback)
-    reply = gen.generate_response(
-        query=message,
-        retrieved_chunks=retrieved,
-        chat_history=chat_history,
-        token=api_key.strip() if api_key else None
-    )
-
-    chat_history.append({"role": "user", "content": message})
-    chat_history.append({"role": "assistant", "content": reply})
-
-    evidence_html = format_evidence_html(retrieved)
-    return "", chat_history, evidence_html
+    except Exception as exc:
+        error_msg = f"Diagnostics: {str(exc)}"
+        chat_history.append({"role": "user", "content": message})
+        chat_history.append({"role": "assistant", "content": "I encountered a processing issue: " + error_msg})
+        return "", chat_history, format_evidence_html([], note="Error: " + error_msg)
 
 
 CUSTOM_CSS = """
 body, .gradio-container {
-    background-color: #050b1a !important;
-    color: #eaf2ff !important;
-    font-family: "Segoe UI", system-ui, -apple-system, sans-serif !important;
+    background-color: #030712 !important;
+    color: #f1f5f9 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    max-width: 1100px !important;
+    margin: 0 auto !important;
 }
+
+/* Header Container */
 .header-box {
     display: flex;
     align-items: center;
     gap: 16px;
     padding: 16px 20px;
-    background: radial-gradient(circle at 10% 20%, #0d1e44, #061129);
-    border: 1px solid rgba(96, 165, 250, 0.25);
-    border-radius: 16px;
-    margin-bottom: 16px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    background: radial-gradient(circle at 10% 20%, #0c1a3b, #050b1a);
+    border: 1px solid #1e3a8a;
+    border-radius: 14px;
+    margin-bottom: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 .arc-logo {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
     animation: rotateLogo 24s linear infinite;
 }
 @keyframes rotateLogo { to { transform: rotate(360deg); } }
-.banner-notice {
-    font-size: 11.5px;
-    color: #64748b;
-    margin-top: 4px;
+
+/* Quick Question Chip Buttons */
+.benchmark-btn {
+    background: #0b1739 !important;
+    border: 1px solid #1e3a8a !important;
+    color: #38bdf8 !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+}
+.benchmark-btn:hover {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    border-color: #38bdf8 !important;
+}
+
+/* Primary Action Buttons */
+button.primary {
+    background: linear-gradient(135deg, #0284c7, #0369a1) !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+/* Accordion Styling */
+.gr-accordion {
+    background: #071126 !important;
+    border: 1px solid #1e293b !important;
+    border-radius: 10px !important;
+    margin-top: 12px !important;
+}
+.gr-accordion > .label-wrap {
+    color: #38bdf8 !important;
+    font-weight: 600 !important;
+}
+
+/* Chatbot Area */
+.bubble-wrap {
+    background-color: #050b1a !important;
 }
 """
 
 with gr.Blocks(title="JARVIS - Anas Digital Clone") as demo:
-    # Header Banner
+    # 1. Header Banner with Arc Reactor Branding
     gr.HTML("""
     <div class="header-box">
-      <div style="width:48px;height:48px;display:grid;place-items:center;background:#061331;border-radius:12px;border:1px solid #38bdf8;box-shadow:0 0 16px rgba(56,189,248,0.35);">
+      <div style="width:48px;height:48px;display:grid;place-items:center;background:#050d24;border-radius:12px;border:1px solid #0284c7;box-shadow:0 0 16px rgba(2,132,199,0.4);">
         <svg class="arc-logo" viewBox="0 0 64 64" width="40" height="40">
-          <circle cx="32" cy="32" r="28" fill="none" stroke="#38bdf8" stroke-width="2.5"/>
-          <circle cx="32" cy="32" r="22" fill="none" stroke="#22d3ee" stroke-width="1.2" stroke-dasharray="3 4"/>
-          <line x1="32" y1="6" x2="32" y2="12" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
-          <line x1="32" y1="52" x2="32" y2="58" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
-          <line x1="6" y1="32" x2="12" y2="32" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
-          <line x1="52" y1="32" x2="58" y2="32" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="32" cy="32" r="28" fill="none" stroke="#0284c7" stroke-width="2.5"/>
+          <circle cx="32" cy="32" r="22" fill="none" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="3 4"/>
+          <line x1="32" y1="6" x2="32" y2="12" stroke="#0284c7" stroke-width="3" stroke-linecap="round"/>
+          <line x1="32" y1="52" x2="32" y2="58" stroke="#0284c7" stroke-width="3" stroke-linecap="round"/>
+          <line x1="6" y1="32" x2="12" y2="32" stroke="#0284c7" stroke-width="3" stroke-linecap="round"/>
+          <line x1="52" y1="32" x2="58" y2="32" stroke="#0284c7" stroke-width="3" stroke-linecap="round"/>
           <polygon points="32,16 46,24 46,40 32,48 18,40 18,24" fill="none" stroke="#7dd3fc" stroke-width="2" stroke-linejoin="round"/>
           <circle cx="32" cy="32" r="8" fill="#38bdf8"/>
-          <circle cx="32" cy="32" r="3" fill="#061331"/>
+          <circle cx="32" cy="32" r="3" fill="#050d24"/>
         </svg>
       </div>
-      <div>
-        <h1 style="font-size:20px;margin:0;letter-spacing:1px;color:#f8fafc;">JARVIS</h1>
-        <p style="font-size:12.5px;margin:2px 0 0 0;color:#38bdf8;font-weight:600;">Autonomous Digital Clone of Anas • Hybrid RAG Engine</p>
-        <p class="banner-notice">⚠️ Clone Notice: Grounded in authentic documents authored by Anas (UMT Sialkot, CGPA 3.5, Atarion Solutions, SPIDER AI Security). Refuses unverified questions with <i>"I don't have that in my notes."</i></p>
+      <div style="flex-grow:1;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <h1 style="font-size:20px;margin:0;letter-spacing:1px;color:#f8fafc;">JARVIS</h1>
+          <span style="background:#0284c7;color:#ffffff;font-size:10px;font-weight:bold;padding:2px 8px;border-radius:12px;letter-spacing:0.5px;">ONLINE</span>
+        </div>
+        <p style="font-size:12.5px;margin:2px 0 0 0;color:#38bdf8;font-weight:600;">Autonomous Digital Clone of Anas • Hybrid RAG (BM25 + Dense Cosine + RRF)</p>
+        <p style="font-size:11.5px;color:#94a3b8;margin:3px 0 0 0;">Strict Grounding: Verified notes on Atarion Solutions, SPIDER AI Security, and UMT Sialkot. Unverified questions refuse with <i>"I don't have that in my notes."</i></p>
       </div>
     </div>
     """)
 
+    # 2. Main Dialogue Stream (Full Width on Top)
+    chatbot = gr.Chatbot(
+        label="JARVIS Neural Dialogue",
+        height=480,
+        value=[
+            {
+                "role": "assistant",
+                "content": "Hello, I am JARVIS, the autonomous digital clone of Anas. I answer strictly from his verified notes, CV, Atarion Solutions projects, research and study habits. Ask me anything, or click a benchmark query below!\n\n*(Tip: If you'd like to use a specific LLM like Mistral, Groq, or Gemini, expand the Control Station accordion below to enter your key.)*"
+            }
+        ]
+    )
+
+    # 3. Message Input Row (Directly Below Chatbot)
     with gr.Row():
-        # Left Column: Configuration & Retrieved Context Evidence
-        with gr.Column(scale=4):
-            with gr.Group():
-                gr.Markdown("### ⚙️ Control Station")
-                mode_radio = gr.Radio(
-                    choices=["Hybrid (RRF)", "Dense only", "BM25 only"],
-                    value="Hybrid (RRF)",
-                    label="Retrieval Strategy",
-                    info="RRF merges lexical BM25 and dense semantic similarity."
-                )
-                top_k_slider = gr.Slider(
-                    minimum=1,
-                    maximum=5,
-                    value=3,
-                    step=1,
-                    label="Top-K Chunks to Retrieve"
-                )
-                api_key_box = gr.Textbox(
-                    label="🔑 LLM API Key (Optional)",
-                    placeholder="Mistral API, Groq, Gemini, or Hugging Face key...",
-                    type="password",
-                    info="Connects to real-time neural LLM. Without a key, high-speed grounded synthesis is used automatically."
-                )
+        msg_input = gr.Textbox(
+            placeholder="Ask JARVIS about Anas's projects, research, habits, or university...",
+            show_label=False,
+            scale=8,
+            container=False
+        )
+        send_btn = gr.Button("Send", variant="primary", scale=1)
+        clear_btn = gr.Button("Clear", scale=1)
 
-            with gr.Group():
-                gr.Markdown("### 🔍 Retrieved Context Evidence")
-                evidence_panel = gr.HTML(
-                    value=format_evidence_html([])
-                )
+    # 4. Quick Benchmark Queries at the FULL END of the chat interface
+    gr.Markdown("**Quick Benchmark Queries:**")
+    with gr.Row():
+        btn_q1 = gr.Button("⚡ Jarvis Capabilities", elem_classes=["benchmark-btn"], size="sm")
+        btn_q2 = gr.Button("🏢 Atarion Solutions", elem_classes=["benchmark-btn"], size="sm")
+        btn_q3 = gr.Button("🛡️ SPIDER & Security", elem_classes=["benchmark-btn"], size="sm")
+        btn_q4 = gr.Button("🎓 University & CSS", elem_classes=["benchmark-btn"], size="sm")
+        btn_q5 = gr.Button("🎂 Cake Recipe (Refusal)", elem_classes=["benchmark-btn"], size="sm")
 
-        # Right Column: Dialogue Stream
-        with gr.Column(scale=6):
-            chatbot = gr.Chatbot(
-                label="Neural Dialogue Stream",
-                height=520,
-                value=[
-                    {
-                        "role": "assistant",
-                        "content": "Hello, I am JARVIS, the autonomous digital clone of Anas. I answer strictly from his verified notes, CV, Atarion Solutions projects, research and study habits. Ask me anything, or click a benchmark query below!"
-                    }
-                ]
+    # 5. Expandable & Contractable Control Settings (Below the Chat Panel)
+    with gr.Accordion("⚙️ RAG Control Station & Custom LLM API Key", open=False):
+        with gr.Row():
+            mode_radio = gr.Radio(
+                choices=["Hybrid (RRF)", "Dense only", "BM25 only"],
+                value="Hybrid (RRF)",
+                label="Retrieval Strategy",
+                info="RRF merges lexical BM25 and dense semantic similarity (k=60)."
             )
+            top_k_slider = gr.Slider(
+                minimum=1,
+                maximum=5,
+                value=3,
+                step=1,
+                label="Top-K Chunks to Retrieve"
+            )
+        api_key_box = gr.Textbox(
+            label="🔑 Custom LLM API Key (Optional)",
+            placeholder="Paste your Mistral API key, Groq, Google Gemini, or Hugging Face token...",
+            type="password",
+            info="Supports Mistral AI, Groq, Google Gemini, or Hugging Face tokens. When left empty, instant offline grounded synthesis is used automatically."
+        )
 
-            # Quick Query Chips
-            gr.Markdown("**Quick Benchmark Queries:**")
-            with gr.Row():
-                btn_q1 = gr.Button("⚡ Jarvis Capabilities", size="sm")
-                btn_q2 = gr.Button("🏢 Atarion Solutions", size="sm")
-                btn_q3 = gr.Button("🛡️ SPIDER & Security", size="sm")
-                btn_q4 = gr.Button("🎓 University & CSS", size="sm")
-                btn_q5 = gr.Button("🎂 Cake Recipe (Refusal)", size="sm")
-
-            with gr.Row():
-                msg_input = gr.Textbox(
-                    placeholder="Message JARVIS...",
-                    show_label=False,
-                    scale=8,
-                    container=False
-                )
-                send_btn = gr.Button("Send", variant="primary", scale=1)
-                clear_btn = gr.Button("Clear", scale=1)
+    # 6. Expandable & Contractable Retrieved Evidence Inspection (Below the Chat Panel)
+    with gr.Accordion("🔍 Retrieved Context Evidence & Score Inspection", open=False):
+        evidence_panel = gr.HTML(
+            value=format_evidence_html([])
+        )
 
     # Wire event handlers
     msg_input.submit(
@@ -274,7 +321,7 @@ with gr.Blocks(title="JARVIS - Anas Digital Clone") as demo:
 
 if __name__ == "__main__":
     demo.launch(
-        theme=gr.themes.Ocean(),
+        theme=gr.themes.Soft(primary_hue="sky", neutral_hue="slate"),
         css=CUSTOM_CSS,
         server_name="0.0.0.0",
         server_port=int(os.environ.get("PORT", 7860))

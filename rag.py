@@ -53,7 +53,7 @@ class HybridRAG:
         print(f"Loaded embedding matrix shape: {self.embeddings.shape}")
         
         print(f"Loading embedding model: {MODEL_NAME}...")
-        self.embedder = SentenceTransformer(MODEL_NAME)
+        self.embedder = SentenceTransformer(MODEL_NAME, device="cpu")
         
         self.cross_encoder = None  # Lazily loaded if requested
 
@@ -61,7 +61,7 @@ class HybridRAG:
         if self.cross_encoder is None and HAS_CROSS_ENCODER:
             try:
                 print(f"Loading Cross-Encoder model: {CROSS_ENCODER_NAME}...")
-                self.cross_encoder = CrossEncoder(CROSS_ENCODER_NAME)
+                self.cross_encoder = CrossEncoder(CROSS_ENCODER_NAME, device="cpu")
             except Exception as e:
                 print(f"Could not load CrossEncoder: {e}")
         return self.cross_encoder
