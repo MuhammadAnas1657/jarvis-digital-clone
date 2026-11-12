@@ -146,7 +146,7 @@ body, .gradio-container {
 }
 """
 
-with gr.Blocks(theme=gr.themes.Ocean(), css=CUSTOM_CSS, title="JARVIS - Anas Digital Clone") as demo:
+with gr.Blocks(title="JARVIS - Anas Digital Clone") as demo:
     # Header Banner
     gr.HTML("""
     <div class="header-box">
@@ -207,7 +207,6 @@ with gr.Blocks(theme=gr.themes.Ocean(), css=CUSTOM_CSS, title="JARVIS - Anas Dig
             chatbot = gr.Chatbot(
                 label="Neural Dialogue Stream",
                 height=520,
-                type="messages",
                 value=[
                     {
                         "role": "assistant",
@@ -274,4 +273,9 @@ with gr.Blocks(theme=gr.themes.Ocean(), css=CUSTOM_CSS, title="JARVIS - Anas Dig
     )
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", 7860)))
+    demo.launch(
+        theme=gr.themes.Ocean(),
+        css=CUSTOM_CSS,
+        server_name="0.0.0.0",
+        server_port=int(os.environ.get("PORT", 7860))
+    )
