@@ -189,6 +189,11 @@ button.primary {
     font-weight: 600 !important;
     font-size: 13px !important;
 }
+
+/* Hide clutter copy buttons on messages */
+button[aria-label="Copy"], button[title="Copy"], button[aria-label="copy"], .copy_button {
+    display: none !important;
+}
 """
 
 with gr.Blocks(title="JARVIS - Anas Digital Clone") as demo:
@@ -219,11 +224,10 @@ with gr.Blocks(title="JARVIS - Anas Digital Clone") as demo:
     </div>
     """)
 
-    # 2. Main Dialogue Stream (Full Width, show_copy_button=False)
+    # 2. Main Dialogue Stream (Full Width)
     chatbot = gr.Chatbot(
         label="JARVIS Neural Dialogue",
         height=360,
-        show_copy_button=False,
         value=[
             {
                 "role": "assistant",
