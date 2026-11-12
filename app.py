@@ -63,6 +63,10 @@ def format_evidence_html(chunks: List[Dict[str, Any]], note: str = "") -> str:
         cid = c.get("id", idx)
         score = c.get("score", 0.0)
         mode_label = c.get("retrieval_mode", "RRF")
+        ce_score = c.get("ce_score", None)
+        badge_text = f"{mode_label}: {score}"
+        if ce_score is not None:
+            badge_text += f" | CE: {ce_score}"
         text = c.get("text", "")
         snippet = text[:300] + ("..." if len(text) > 300 else "")
 
@@ -71,7 +75,7 @@ def format_evidence_html(chunks: List[Dict[str, Any]], note: str = "") -> str:
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:11.5px;">
             <span style="background:linear-gradient(135deg,#0284c7,#0369a1);color:#ffffff;font-weight:bold;padding:1px 6px;border-radius:4px;">#{idx}</span>
             <span style="color:#38bdf8;font-family:monospace;font-weight:600;">{source} (Chunk #{cid})</span>
-            <span style="margin-left:auto;color:#7dd3fc;font-family:monospace;font-weight:bold;background:#0b1d44;border:1px solid rgba(56,189,248,0.4);padding:1px 6px;border-radius:4px;">{mode_label}: {score}</span>
+            <span style="margin-left:auto;color:#7dd3fc;font-family:monospace;font-weight:bold;background:#0b1d44;border:1px solid rgba(56,189,248,0.4);padding:1px 6px;border-radius:4px;">{badge_text}</span>
           </div>
           <div style="font-size:12px;line-height:1.5;color:#cbd5e1;border-left:2px solid #0284c7;padding-left:8px;">{snippet}</div>
         </div>

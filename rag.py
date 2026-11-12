@@ -69,13 +69,16 @@ class HybridRAG:
     def bm25_search(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
         """
         Rank chunks using BM25 keyword matching.
+        Filters persona name when other content tokens exist to prevent self-referential bias.
         Returns top-k chunks with their BM25 scores.
         """
         query_tokens = tokenize_text(query)
         if not query_tokens:
             return []
             
-        scores = self.bm25.get_scores(query_tokens)
+        content_tokens = [t for t in query_tokens if t not in {"anas", "muhammad"}]
+        tokens_to_use = content_tokens if content_tokens else query_tokens
+        scores = self.bm25.get_scores(tokens_to_use)
         top_indices = np.argsort(scores)[::-1][:top_k]
         
         results = []
@@ -206,7 +209,7 @@ class HybridRAG:
             reranked.append(item)
         return reranked
 
-    def retrieve(self, query: str, mode: str = "Hybrid", top_k: int = 3, use_reranker: bool = False) -> List[Dict[str, Any]]:
+    def retrieve(self, query: str, mode: str = "Hybrid", top_k: int = 3, use_reranker: bool = True) -> List[Dict[str, Any]]:
         """
         Unified retrieval entry point.
         mode: 'Hybrid', 'Dense', or 'BM25'
@@ -217,11 +220,13 @@ class HybridRAG:
         elif "dense" in mode_lower:
             results = self.dense_search(query, top_k=top_k)
         else:
-            # Default to Hybrid RRF
-            results = self.hybrid_search_rrf(query, top_k=top_k)
+            # Default to Hybrid RRF with candidate pool
+            results = self.hybrid_search_rrf(query, top_k=max(top_k, 5))
 
-        if use_reranker and HAS_CROSS_ENCODER:
+        if use_reranker and HAS_CROSS_ENCODER and "dense" not in mode_lower and "bm25" not in mode_lower:
             results = self.rerank_with_cross_encoder(query, results, top_k=top_k)
+        else:
+            results = results[:top_k]
             
         return results
 
